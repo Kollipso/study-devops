@@ -1,0 +1,61 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres:10.6
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test
+    networks:
+      internal:
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command: -c fsync=off -c full_page_writes=off
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 1s
+      timeout: 1s
+      retries: 60
+
+  web:
+    image: nginx:alpine
+    environment:
+      DB_NAME: test
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: db
+    # ports:
+    #  - 8000:80
+    networks:
+      internal:
+      traefik_endpoint:
+    volumes:
+      - web_nginx:/var/www/html
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+      labels:
+        traefik.enable: 'true'
+        traefik.http.routers.mytest.tls: 'true'
+        traefik.http.routers.mytest.tls.certresolver: letsenc
+        traefik.http.routers.mytest.entrypoints: https
+        traefik.http.routers.mytest.rule: Host(`mytest.${DOMAIN_NAME}`)
+        traefik.http.routers.mytest.middlewares: add-security-headers
+        traefik.http.services.mytest.loadbalancer.server.port: 80
+
+networks:
+  internal:
+    external: false
+  traefik_endpoint:
+    external: true
+
+volumes:
+  postgres_data:
+  web_nginx:
