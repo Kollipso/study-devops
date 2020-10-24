@@ -1,0 +1,13 @@
+---
+- hosts: all
+  tasks:
+  - name: установить cowsay
+    apt:
+     name: cowsay
+     update_cache: yes
+     state: present
+  - name: установить midnight command
+    apt:
+     name: mc
+     update_cache: yes
+     state: present
