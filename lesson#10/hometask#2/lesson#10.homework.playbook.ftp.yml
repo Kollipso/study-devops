@@ -1,0 +1,85 @@
+---
+- hosts: [web]
+  vars:
+    user_name: ftp01
+  tasks:
+  - name: Проверить наличие в конфиге /etc/shells для ограниченного shell-a пользователя ftpu01
+    lineinfile:
+      path: /etc/shells
+      regexp: "^/bin/false"
+      line: "/bin/false"
+      state: present
+
+  - name: Установить vsftpd
+    apt:
+      name: vsftpd
+      update_cache: no
+      state: present
+
+  - name: Добавить пользователя {{ user_name }}
+    user:
+      name: "{{ user_name }}"
+      group: ftp
+      shell: /bin/false
+      home: /srv/ftp
+      password: "{{ user_password | password_hash('sha512') }}"
+      update_password: on_create
+      state: present
+
+  - name: Создать каталог и поменять владельца /srv/ftp
+    file:
+      path: /srv/ftp
+      state: directory
+      owner: root
+      group: root
+      mode: 0555
+      recurse: yes
+
+  - name: Создать каталог и поменять владельца /srv/ftp/output
+    file:
+      path: /srv/ftp/output
+      state: directory
+      owner: "{{ user_name }}"
+      group: ftp
+      mode: 0770
+      recurse: yes
+
+  - name: Удалить старый файл vsftpd.conf для создания нового
+    file:
+      path: /etc/vsftpd.conf
+      state: absent
+
+  - name: Создать новый файл vsftpd.conf
+    blockinfile:
+      path: /etc/vsftpd.conf
+      create: yes
+      marker: ""
+      block: |
+        listen=YES
+        anonymous_enable=NO
+        local_enable=YES
+        write_enable=YES
+        dirmessage_enable=YES
+        use_localtime=YES
+        xferlog_enable=YES
+        connect_from_port_20=YES
+        chroot_local_user=YES
+        allow_writeable_chroot=YES
+        write_enable=YES
+        secure_chroot_dir=/var/run/vsftpd/empty
+        pam_service_name=vsftpd
+        rsa_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+
+  - name: Добавить разрешения для /etc/vsftpd.conf
+    file:
+      path: /etc/vsftpd.conf
+      owner: root
+      group: root
+
+  - name: Перезапустить сервис vsftpd
+    service:
+      name: vsftpd
+      state: restarted
+
+  - name: Переместить файл hello.world в папку ftp
+    command: mv /home/ansible/hello.world /srv/ftp/output/hello.world

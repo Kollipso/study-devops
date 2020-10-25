@@ -1,0 +1,14 @@
+---
+- import_playbook: lesson#10.homework.playbook.user_service.yml 
+  vars: 
+   user_name: ngx 
+   service_name: nginx
+
+- import_playbook: lesson#10.homework.playbook.docker.yml 
+  vars:
+   create_containers: 3
+
+- import_playbook: lesson#10.homework.playbook.ftp.yml 
+  vars:
+   user_name: ftp01 
+   user_password: "12345"

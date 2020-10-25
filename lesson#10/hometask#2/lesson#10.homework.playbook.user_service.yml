@@ -1,0 +1,51 @@
+---
+- hosts: all
+  become: yes
+  vars:
+    user_name: ngx
+    service_name: nginx
+
+  tasks:
+  - name: Собрать информацию по ядрам всех нод   
+    setup:
+     filter=*processor_core
+  
+  - name: Создать пользователя {{ user_name }}
+    user:
+     name: "{{ user_name }}"
+     state: present
+
+  - name: Проверить создание пользователя {{ user_name }}
+    command:
+     cmd: "id {{ user_name }}"
+
+  - name: Установить последнюю версию сервиса {{service_name}}
+    apt:
+     name: "{{ service_name }}"
+     state: latest
+     update_cache: yes
+
+  - name: Проверить работу сервиса {{ service_name }}
+    service:
+     name: "{{ service_name }}"
+     state: started
+
+  - name: Создать файл hello.world для ftp
+    copy:
+     content: 'Hello world'
+     dest: /home/ansible/hello.world
+
+  - name: Удалить пользователя {{ user_name }}
+    user:
+     name: "{{ user_name }}"
+     state: absent
+
+  - name: Остановить сервис {{ service_name }}
+    service:
+     name: "{{ service_name }}"
+     state: stopped
+
+  - name: Удалить сервис {{ service_name }}
+    apt:
+     name: "{{ service_name }}"
+     state: absent

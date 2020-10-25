@@ -1,0 +1,52 @@
+---
+- hosts: all
+  become: true
+  vars:
+    create_containers: 4
+    default_container_name: docker
+    default_container_image: ubuntu
+    default_container_command: sleep 1d
+
+  tasks:
+    - name: Установить aptitude 
+      apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+
+    - name: Установить зависимые модули
+      apt: name={{ item }} state=latest update_cache=yes
+      loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools', 'python-setuptools']
+
+    - name: Добавить Docker GPG apt ключ
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Добавить Docker репозиторий
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu xenial stable
+        state: present
+
+    - name: Обновить apt и установить docker-ce
+      apt: update_cache=yes name=docker.io state=latest
+
+    - name: Установить Docker Module для Python
+      pip:
+        name: docker
+
+    - name: Получить последний образ Docker
+      docker_image:
+        name: "{{ item }}"
+        source: pull
+      loop: [ '{{ default_container_image }}', 'pacur/centos-7']
+
+    - name: Получить образ
+      docker_image:
+        name: pacur/centos-7
+        source: pull
+
+    - name: Создать контейнеры docker
+      docker_container:
+        name: "{{ default_container_name }}{{ item }}"
+        image: "{{ default_container_image }}"
+        command: "{{ default_container_command }}"
+        state: present
+      with_sequence: count={{ create_containers }}
