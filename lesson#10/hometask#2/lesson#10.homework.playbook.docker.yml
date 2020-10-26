@@ -42,6 +42,13 @@
       docker_image:
         name: pacur/centos-7
         source: pull
+ 
+    - name: Удалить контейнеры
+      docker_container:
+        name: "{{ default_container_name }}{{ item }}"
+        state: absent
+        force_kill: yes
+      with_sequence: count={{ create_containers }}
 
     - name: Создать контейнеры docker
       docker_container:
