@@ -97,3 +97,15 @@
   shell: "{{ hostvars[groups['kubernetes-master'][0]]['cluster-join'].stdout }}"
   when: "'kubernetes-worker' in group_names and not p.stat.exists"
 
+# Master
+- name: Get git deployment
+  git: 
+    repo: https://github.com/Kollipso/study-devops/
+    dest: ~
+  when: "'kubernetes-master' in group_names"
+
+- name: Make deployment
+  shell: kubectl apply -k ~/study-devops/final-work/deployment/
+  when: "'kubernetes-master' in group_names"
+
+
