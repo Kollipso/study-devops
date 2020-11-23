@@ -1,0 +1,52 @@
+---
+# Common
+
+- name: Install aptitude using apt
+  apt: name=aptitude state=latest update_cache=yes
+
+
+- name: Install basic dependencies
+  apt: name={{ item }} state=latest update_cache=yes
+  with_items:
+    - 'apt-transport-https'
+    - 'ca-certificates'
+    - 'curl'
+    - 'software-properties-common'
+    - 'python3-pip'
+    - 'virtualenv'
+    - 'python3-setuptools'
+    - 'python-setuptools'
+
+- name: Check if docker is installed
+  package:
+    name: docker-ce
+    state: present
+  register: pkg_check
+  check_mode: true
+  ignore_errors: yes
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu xenial stable
+    state: present
+
+- name: Install docker
+  package:
+    name: docker-ce
+    state: present
+
+- name: Adds remote user to docker group
+  user:
+    name: '{{ ansible_ssh_user }}'
+    groups: docker
+    append: yes
+
+- name: Start docker service
+  service:
+    name: docker
+    state: started

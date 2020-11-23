@@ -1,0 +1,8 @@
+---
+- name: "Provision hosts for kubernetes"
+  hosts: kubernetes
+  become: yes
+  become_user: root 
+  roles:
+    - docker
+    - kubernetes

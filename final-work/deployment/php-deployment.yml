@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: php
+  labels:
+    app: php
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: php
+    tier: frontend
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: apache-pv-claim
+  labels:
+    app: php
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: php
+  labels:
+    app: php
+spec:
+  selector:
+    matchLabels:
+      app: php
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: php
+        tier: frontend
+    spec:
+      containers:
+      - image: php:7.4.12-apache
+        name: php
+        env:
+         ports:
+        - containerPort: 80
+          name: apache
+        volumeMounts:
+        - name: apache-persistent-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: apache-persistent-storage
+        persistentVolumeClaim:
+          claimName: apache-pv-claim

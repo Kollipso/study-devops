@@ -1,0 +1,11 @@
+# Kubernetes hosts
+[kubernetes-master]
+k8s
+
+[kubernetes-worker]
+node
+
+[kubernetes:children]
+kubernetes-master
+kubernetes-worker
+
